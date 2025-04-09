@@ -1,0 +1,3026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productivity Suite</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6b8cae;
+            --text-color: #333;
+            --bg-color: #f5f5f5;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --progress-bg: #e0e0e0;
+            --completed-color: #4caf50;
+            --early-completion-color: #2e7d32;
+            --pomodoro-color: #e74c3c;
+            --focus-color: #2ecc71;
+        }
+
+        .dark-theme {
+            --primary-color: #5d8adb;
+            --secondary-color: #7fa3d7;
+            --text-color: #f0f0f0;
+            --bg-color: #1a1a1a;
+            --card-bg: rgba(40, 40, 40, 0.85);
+            --progress-bg: #444;
+            --completed-color: #66bb6a;
+            --early-completion-color: #388e3c;
+            --pomodoro-color: #ff6b6b;
+            --focus-color: #58d68d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .owner-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: transform 0.3s ease;
+            padding: 5px;
+        }
+
+        .settings-btn:hover {
+            transform: rotate(90deg);
+        }
+
+        .settings-menu {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            padding: 10px 0;
+            width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .settings-menu.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .settings-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .settings-item:hover {
+            background-color: var(--bg-color);
+        }
+
+        .settings-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .tab.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Task Timeline Tracker Styles */
+        .time-display {
+            text-align: center;
+            padding: 10px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .current-time {
+            font-size: 1.2rem;
+        }
+
+        .ongoing-task {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .task-item {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            cursor: move;
+            user-select: none;
+            transition: background-color 0.2s, transform 0.2s;
+            position: relative;
+        }
+
+        .task-item.dragging {
+            opacity: 0.8;
+            background-color: var(--bg-color);
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .task-item .drag-handle {
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: move;
+            padding: 10px;
+            color: var(--secondary-color);
+            opacity: 0.7;
+        }
+
+        .task-item:hover .drag-handle {
+            opacity: 1;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            margin-left: 25px;
+        }
+
+        .task-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .time-left {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        .end-date {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            margin-top: 5px;
+            margin-left: 25px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: var(--progress-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            position: relative;
+            margin-left: 25px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--primary-color);
+            font-weight: bold;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+            font-size: 0.8rem;
+            transition: color 0.3s ease;
+        }
+
+        .task-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+            margin-left: 25px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .past-tasks {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-height: 300px;
+            margin-top: 20px;
+        }
+
+        .past-tasks-header {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .past-task-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--progress-bg);
+        }
+
+        .past-task-name {
+            font-weight: 500;
+        }
+
+        .past-task-time {
+            color: var(--secondary-color);
+        }
+
+        .past-task-date {
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+            margin-top: 3px;
+        }
+
+        .early-completion {
+            color: var(--early-completion-color);
+            font-size: 0.8rem;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+
+        .no-tasks-message {
+            text-align: center;
+            padding: 20px;
+            color: var(--secondary-color);
+            font-style: italic;
+        }
+
+        /* Floating Buttons */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .add-task-btn {
+            position: fixed;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .draggable {
+            cursor: move;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--progress-bg);
+            border-radius: 5px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .duration-input {
+            position: relative;
+        }
+
+        .duration-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            white-space: nowrap;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .task-method-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .task-method-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--primary-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .task-method-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .task-method-content {
+            display: none;
+        }
+
+        .task-method-content.active {
+            display: block;
+        }
+
+        /* Celebration Styles */
+        .celebration-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .celebration-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .celebration-text {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+            animation: pulse 2s infinite;
+        }
+
+        .celebration-subtext {
+            font-size: 1.5rem;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .celebration-close {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .celebration-close:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+        }
+
+        /* Data Modal Styles */
+        .data-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .data-modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .data-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .data-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .data-action-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
+
+        .data-action-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .data-textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            margin-top: 15px;
+            border: 1px solid var(--progress-bg);
+            border-radius: 5px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            resize: none;
+        }
+
+        /* Pomodoro Timer Styles */
+        .pomodoro-container {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .pomodoro-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pomodoro-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--pomodoro-color);
+        }
+
+        .pomodoro-timer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pomodoro-progress {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 20px;
+        }
+
+        .pomodoro-progress-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(var(--pomodoro-color) 0%, var(--progress-bg) 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pomodoro-time {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .pomodoro-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pomodoro-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--pomodoro-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .pomodoro-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .pomodoro-btn.secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .pomodoro-btn.secondary:hover {
+            background-color: #5d7aa3;
+        }
+
+        .pomodoro-records {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .pomodoro-records-header {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--pomodoro-color);
+            font-weight: bold;
+        }
+
+        .pomodoro-records-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .pomodoro-records-table th, 
+        .pomodoro-records-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--progress-bg);
+        }
+
+        .pomodoro-records-table th {
+            font-weight: bold;
+            color: var(--pomodoro-color);
+        }
+
+        .pomodoro-status-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--pomodoro-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .pomodoro-status-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* Pomodoro Set Time Modal */
+        .pomodoro-set-time {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pomodoro-time-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pomodoro-time-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pomodoro-time-input input {
+            width: 60px;
+            text-align: center;
+        }
+
+        /* Focus Time Styles */
+        .focus-container {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .focus-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .focus-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--focus-color);
+        }
+
+        .focus-timer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .focus-time-display {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--focus-color);
+        }
+
+        .focus-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .focus-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--focus-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .focus-btn:hover {
+            background-color: #27ae60;
+        }
+
+        .focus-btn.secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .focus-btn.secondary:hover {
+            background-color: #5d7aa3;
+        }
+
+        .focus-task-input {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .focus-records {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .focus-records-header {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--focus-color);
+            font-weight: bold;
+        }
+
+        .focus-records-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .focus-records-table th, 
+        .focus-records-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--progress-bg);
+        }
+
+        .focus-records-table th {
+            font-weight: bold;
+            color: var(--focus-color);
+        }
+
+        .focus-status-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--focus-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .focus-status-btn:hover {
+            background-color: #27ae60;
+        }
+
+        /* Status Modal Styles */
+        .status-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .status-modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .status-tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .status-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .status-tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .status-view {
+            display: none;
+        }
+
+        .status-view.active {
+            display: block;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+
+        .date-range-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .date-range-selector input {
+            flex: 1;
+        }
+
+        /* Remarks Modal Styles */
+        .remarks-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .remarks-modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .remarks-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .remarks-option {
+            padding: 15px;
+            border: 1px solid var(--progress-bg);
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .remarks-option:hover {
+            background-color: var(--bg-color);
+        }
+
+        .remarks-option.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes rotate-clockwise {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes rotate-counter-clockwise {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .pomodoro-progress {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .pomodoro-time {
+                font-size: 2rem;
+            }
+            
+            .focus-time-display {
+                font-size: 2.5rem;
+            }
+            
+            .pomodoro-records-table, .focus-records-table {
+                font-size: 0.9rem;
+            }
+            
+            .status-modal-content {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                padding: 10px;
+            }
+            
+            .pomodoro-buttons, .focus-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .pomodoro-btn, .focus-btn {
+                width: 100%;
+            }
+            
+            .remarks-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="owner-name">Productivity Suite</div>
+        <button class="settings-btn" id="settings-btn">☰</button>
+        <div class="settings-menu" id="settings-menu">
+            <div class="settings-item" id="data-management-btn">
+                <i>📁</i> Data Management
+            </div>
+        </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab active" data-tab="tasks">TASKS</div>
+        <div class="tab" data-tab="pomodoro">POMODORO</div>
+        <div class="tab" data-tab="focus">FOCUS TIME</div>
+    </div>
+
+    <!-- Task Timeline Tracker Content -->
+    <div class="tab-content active" id="tasks-content">
+        <div class="time-display">
+            <div class="current-time" id="current-time">Loading time...</div>
+        </div>
+
+        <main class="ongoing-task" id="ongoing-tasks-container">
+            <div class="no-tasks-message" id="no-tasks-message">No active tasks. Add a task to get started!</div>
+        </main>
+
+        <section class="past-tasks">
+            <div class="past-tasks-header">Completed Tasks</div>
+            <div id="past-tasks-list"></div>
+        </section>
+
+        <button class="theme-toggle draggable" id="theme-toggle">🌓</button>
+        <button class="add-task-btn draggable" id="add-task-btn">+ Add Task</button>
+
+        <!-- Add Task Modal -->
+        <div class="modal" id="task-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">Add New Task</h2>
+                    <button class="close-modal" id="close-modal">×</button>
+                </div>
+                <form id="task-form">
+                    <div class="form-group">
+                        <label for="task-name">Task Name</label>
+                        <input type="text" id="task-name" required>
+                    </div>
+                    
+                    <div class="task-method-selector">
+                        <button type="button" class="task-method-btn active" id="duration-method-btn">By Duration</button>
+                        <button type="button" class="task-method-btn" id="date-method-btn">By End Date</button>
+                    </div>
+                    
+                    <div class="task-method-content active" id="duration-method">
+                        <div class="form-group">
+                            <label for="task-duration">Duration</label>
+                            <div style="display: flex; gap: 10px;">
+                                <div class="duration-input" style="flex: 1;">
+                                    <input type="number" id="task-years" placeholder="Years" min="0" max="200" value="0">
+                                    <div class="duration-label">Years</div>
+                                </div>
+                                <div class="duration-input" style="flex: 1;">
+                                    <input type="number" id="task-days" placeholder="Days" min="0" max="365" value="0">
+                                    <div class="duration-label">Days</div>
+                                </div>
+                                <div class="duration-input" style="flex: 1;">
+                                    <input type="number" id="task-hours" placeholder="Hours" min="0" max="23" value="0">
+                                    <div class="duration-label">Hours</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                                <div class="duration-input" style="flex: 1;">
+                                    <input type="number" id="task-minutes" placeholder="Minutes" min="0" max="59" value="0">
+                                    <div class="duration-label">Minutes</div>
+                                </div>
+                                <div class="duration-input" style="flex: 1;">
+                                    <input type="number" id="task-seconds" placeholder="Seconds" min="0" max="59" value="0">
+                                    <div class="duration-label">Seconds</div>
+                                </div>
+                                <div style="flex: 1;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="task-method-content" id="date-method">
+                        <div class="form-group">
+                            <label for="task-end-date">End Date and Time</label>
+                            <div class="datetime-input">
+                                <input type="datetime-local" id="task-end-date" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="task-id">
+                    <input type="hidden" id="task-method" value="duration">
+                    <div class="modal-footer">
+                        <button type="button" class="btn" id="cancel-btn">Cancel</button>
+                        <button type="submit" class="btn" id="save-task-btn">Save Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Celebration Overlay -->
+        <div class="celebration-overlay" id="celebration-overlay">
+            <div class="celebration-text" id="celebration-text">CONGRATULATIONS!</div>
+            <div class="celebration-subtext" id="celebration-subtext">You've completed another task!</div>
+            <button class="celebration-close" id="celebration-close">Continue</button>
+        </div>
+
+        <!-- Data Management Modal -->
+        <div class="data-modal" id="data-modal">
+            <div class="data-modal-content">
+                <div class="data-modal-header">
+                    <h2 id="data-modal-title">Data Management</h2>
+                    <button class="close-modal" id="close-data-modal">×</button>
+                </div>
+                <div class="data-actions">
+                    <button class="data-action-btn" id="export-json-btn">Export as JSON</button>
+                    <button class="data-action-btn" id="import-json-btn">Import from JSON</button>
+                    <textarea class="data-textarea" id="data-textarea" placeholder="Paste your JSON data here for import"></textarea>
+                    <button class="data-action-btn" id="import-confirm-btn" style="display: none;">Confirm Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pomodoro Timer Content -->
+    <div class="tab-content" id="pomodoro-content">
+        <div class="pomodoro-container">
+            <div class="pomodoro-header">
+                <div class="pomodoro-title">POMODORO</div>
+                <button class="btn" id="set-pomodoro-btn">Set New</button>
+            </div>
+            
+            <div class="pomodoro-timer">
+                <div class="pomodoro-progress">
+                    <div class="pomodoro-progress-circle" id="pomodoro-progress-circle">
+                        <div class="pomodoro-time" id="pomodoro-time">25:00</div>
+                    </div>
+                </div>
+                
+                <div class="pomodoro-buttons">
+                    <button class="pomodoro-btn" id="start-pomodoro-btn">Start</button>
+                    <button class="pomodoro-btn secondary" id="pause-pomodoro-btn" disabled>Pause</button>
+                    <button class="pomodoro-btn secondary" id="cancel-pomodoro-btn" disabled>Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="pomodoro-records">
+            <div class="pomodoro-records-header">Pomodoro Records</div>
+            <table class="pomodoro-records-table" id="pomodoro-records-table">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Duration</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody id="pomodoro-records-body">
+                    <!-- Records will be inserted here -->
+                </tbody>
+            </table>
+            <button class="pomodoro-status-btn" id="pomodoro-status-btn">STATUS</button>
+        </div>
+        
+        <!-- Set Pomodoro Time Modal -->
+        <div class="modal" id="pomodoro-set-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Set Pomodoro Time</h2>
+                    <button class="close-modal" id="close-pomodoro-set-modal">×</button>
+                </div>
+                <div class="pomodoro-set-time">
+                    <div class="pomodoro-time-inputs">
+                        <div class="pomodoro-time-input">
+                            <input type="number" id="pomodoro-hours" min="0" max="25" value="0">
+                            <label>Hours</label>
+                        </div>
+                        <div class="pomodoro-time-input">
+                            <input type="number" id="pomodoro-minutes" min="0" max="59" value="25">
+                            <label>Minutes</label>
+                        </div>
+                    </div>
+                    <input type="range" id="pomodoro-time-slider" min="0" max="1559" value="25" step="1" style="width: 100%;">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" id="cancel-pomodoro-set-btn">Cancel</button>
+                    <button type="button" class="btn" id="save-pomodoro-set-btn">OK</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pomodoro Remarks Modal -->
+        <div class="remarks-modal" id="pomodoro-remarks-modal">
+            <div class="remarks-modal-content">
+                <div class="modal-header">
+                    <h2>Session Complete</h2>
+                    <button class="close-modal" id="close-pomodoro-remarks-modal">×</button>
+                </div>
+                <p>How was your session?</p>
+                <div class="remarks-options">
+                    <div class="remarks-option" data-remark="💯 Super Focused">💯 Super Focused</div>
+                    <div class="remarks-option" data-remark="😶 Distracted">😶 Distracted</div>
+                    <div class="remarks-option" data-remark="😴 Felt Tired">😴 Felt Tired</div>
+                    <div class="remarks-option" data-remark="😓 Took Unexpected Break">😓 Took Unexpected Break</div>
+                    <div class="remarks-option" data-remark="📴 Got Interrupted">📴 Got Interrupted</div>
+                    <div class="remarks-option" data-remark="🧘 Peaceful Session">🧘 Peaceful Session</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" id="save-pomodoro-remarks-btn">Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pomodoro Status Modal -->
+        <div class="status-modal" id="pomodoro-status-modal">
+            <div class="status-modal-content">
+                <div class="modal-header">
+                    <h2>Pomodoro Status</h2>
+                    <button class="close-modal" id="close-pomodoro-status-modal">×</button>
+                </div>
+                
+                <div class="date-range-selector">
+                    <label>From:</label>
+                    <input type="date" id="pomodoro-start-date">
+                    <label>To:</label>
+                    <input type="date" id="pomodoro-end-date">
+                    <button class="btn" id="apply-pomodoro-date-range">Apply</button>
+                </div>
+                
+                <div class="status-tabs">
+                    <div class="status-tab active" data-view="pomodoro-daily">Daily Overview</div>
+                    <div class="status-tab" data-view="pomodoro-remarks">Remarks Breakdown</div>
+                </div>
+                
+                <div class="status-view active" id="pomodoro-daily-view">
+                    <div class="chart-container" id="pomodoro-daily-chart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+                
+                <div class="status-view" id="pomodoro-remarks-view">
+                    <div class="chart-container" id="pomodoro-remarks-chart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Focus Time Content -->
+    <div class="tab-content" id="focus-content">
+        <div class="focus-container">
+            <div class="focus-header">
+                <div class="focus-title">FOCUS TIME</div>
+            </div>
+            
+            <div class="focus-timer">
+                <div class="focus-time-display" id="focus-time-display">00:00:00</div>
+                
+                <div class="focus-buttons">
+                    <button class="focus-btn" id="start-focus-btn">Start</button>
+                    <button class="focus-btn secondary" id="pause-focus-btn" disabled>Pause</button>
+                    <button class="focus-btn secondary" id="stop-focus-btn" disabled>Stop</button>
+                </div>
+                
+                <div class="focus-task-input" id="focus-task-input" style="display: none;">
+                    <input type="text" id="focus-task-name" placeholder="📝 What are you focusing on?" required>
+                </div>
+            </div>
+        </div>
+        
+        <div class="focus-records">
+            <div class="focus-records-header">Focus Time Records</div>
+            <table class="focus-records-table" id="focus-records-table">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Duration</th>
+                        <th>Focused On</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody id="focus-records-body">
+                    <!-- Records will be inserted here -->
+                </tbody>
+            </table>
+            <button class="focus-status-btn" id="focus-status-btn">STATUS</button>
+        </div>
+        
+        <!-- Focus Time Remarks Modal -->
+        <div class="remarks-modal" id="focus-remarks-modal">
+            <div class="remarks-modal-content">
+                <div class="modal-header">
+                    <h2>Session Complete</h2>
+                    <button class="close-modal" id="close-focus-remarks-modal">×</button>
+                </div>
+                <p>How was your session?</p>
+                <div class="remarks-options">
+                    <div class="remarks-option" data-remark="💯 Super Focused">💯 Super Focused</div>
+                    <div class="remarks-option" data-remark="😶 Distracted">😶 Distracted</div>
+                    <div class="remarks-option" data-remark="😴 Felt Tired">😴 Felt Tired</div>
+                    <div class="remarks-option" data-remark="😓 Took Unexpected Break">😓 Took Unexpected Break</div>
+                    <div class="remarks-option" data-remark="📴 Got Interrupted">📴 Got Interrupted</div>
+                    <div class="remarks-option" data-remark="🧘 Peaceful Session">🧘 Peaceful Session</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" id="save-focus-remarks-btn">Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Focus Time Status Modal -->
+        <div class="status-modal" id="focus-status-modal">
+            <div class="status-modal-content">
+                <div class="modal-header">
+                    <h2>Focus Time Status</h2>
+                    <button class="close-modal" id="close-focus-status-modal">×</button>
+                </div>
+                
+                <div class="date-range-selector">
+                    <label>From:</label>
+                    <input type="date" id="focus-start-date">
+                    <label>To:</label>
+                    <input type="date" id="focus-end-date">
+                    <button class="btn" id="apply-focus-date-range">Apply</button>
+                </div>
+                
+                <div class="status-tabs">
+                    <div class="status-tab active" data-view="focus-daily">Daily Overview</div>
+                    <div class="status-tab" data-view="focus-remarks">Remarks Breakdown</div>
+                </div>
+                
+                <div class="status-view active" id="focus-daily-view">
+                    <div class="chart-container" id="focus-daily-chart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+                
+                <div class="status-view" id="focus-remarks-view">
+                    <div class="chart-container" id="focus-remarks-chart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const currentTimeEl = document.getElementById('current-time');
+        const ongoingTasksContainerEl = document.getElementById('ongoing-tasks-container');
+        const noTasksMessageEl = document.getElementById('no-tasks-message');
+        const pastTasksListEl = document.getElementById('past-tasks-list');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const addTaskBtn = document.getElementById('add-task-btn');
+        const taskModal = document.getElementById('task-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const taskForm = document.getElementById('task-form');
+        const modalTitle = document.getElementById('modal-title');
+        const taskNameInput = document.getElementById('task-name');
+        const taskYearsInput = document.getElementById('task-years');
+        const taskDaysInput = document.getElementById('task-days');
+        const taskHoursInput = document.getElementById('task-hours');
+        const taskMinutesInput = document.getElementById('task-minutes');
+        const taskSecondsInput = document.getElementById('task-seconds');
+        const taskEndDateInput = document.getElementById('task-end-date');
+        const taskIdInput = document.getElementById('task-id');
+        const taskMethodInput = document.getElementById('task-method');
+        const durationMethodBtn = document.getElementById('duration-method-btn');
+        const dateMethodBtn = document.getElementById('date-method-btn');
+        const durationMethod = document.getElementById('duration-method');
+        const dateMethod = document.getElementById('date-method');
+        const celebrationOverlay = document.getElementById('celebration-overlay');
+        const celebrationText = document.getElementById('celebration-text');
+        const celebrationSubtext = document.getElementById('celebration-subtext');
+        const celebrationClose = document.getElementById('celebration-close');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsMenu = document.getElementById('settings-menu');
+        const dataManagementBtn = document.getElementById('data-management-btn');
+        const dataModal = document.getElementById('data-modal');
+        const closeDataModalBtn = document.getElementById('close-data-modal');
+        const exportJsonBtn = document.getElementById('export-json-btn');
+        const importJsonBtn = document.getElementById('import-json-btn');
+        const dataTextarea = document.getElementById('data-textarea');
+        const importConfirmBtn = document.getElementById('import-confirm-btn');
+        
+        // Tabs
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // Pomodoro Elements
+        const pomodoroProgressCircle = document.getElementById('pomodoro-progress-circle');
+        const pomodoroTimeEl = document.getElementById('pomodoro-time');
+        const startPomodoroBtn = document.getElementById('start-pomodoro-btn');
+        const pausePomodoroBtn = document.getElementById('pause-pomodoro-btn');
+        const cancelPomodoroBtn = document.getElementById('cancel-pomodoro-btn');
+        const setPomodoroBtn = document.getElementById('set-pomodoro-btn');
+        const pomodoroSetModal = document.getElementById('pomodoro-set-modal');
+        const closePomodoroSetModal = document.getElementById('close-pomodoro-set-modal');
+        const cancelPomodoroSetBtn = document.getElementById('cancel-pomodoro-set-btn');
+        const savePomodoroSetBtn = document.getElementById('save-pomodoro-set-btn');
+        const pomodoroHoursInput = document.getElementById('pomodoro-hours');
+        const pomodoroMinutesInput = document.getElementById('pomodoro-minutes');
+        const pomodoroTimeSlider = document.getElementById('pomodoro-time-slider');
+        const pomodoroRecordsBody = document.getElementById('pomodoro-records-body');
+        const pomodoroRemarksModal = document.getElementById('pomodoro-remarks-modal');
+        const closePomodoroRemarksModal = document.getElementById('close-pomodoro-remarks-modal');
+        const savePomodoroRemarksBtn = document.getElementById('save-pomodoro-remarks-btn');
+        const pomodoroStatusBtn = document.getElementById('pomodoro-status-btn');
+        const pomodoroStatusModal = document.getElementById('pomodoro-status-modal');
+        const closePomodoroStatusModal = document.getElementById('close-pomodoro-status-modal');
+        const pomodoroStartDate = document.getElementById('pomodoro-start-date');
+        const pomodoroEndDate = document.getElementById('pomodoro-end-date');
+        const applyPomodoroDateRange = document.getElementById('apply-pomodoro-date-range');
+        const pomodoroStatusTabs = document.querySelectorAll('.status-tab[data-view^="pomodoro"]');
+        const pomodoroViews = document.querySelectorAll('.status-view[id$="pomodoro-view"]');
+        const pomodoroDailyChart = document.getElementById('pomodoro-daily-chart');
+        const pomodoroRemarksChart = document.getElementById('pomodoro-remarks-chart');
+        const remarksOptions = document.querySelectorAll('.remarks-option');
+        
+        // Focus Time Elements
+        const focusTimeDisplay = document.getElementById('focus-time-display');
+        const startFocusBtn = document.getElementById('start-focus-btn');
+        const pauseFocusBtn = document.getElementById('pause-focus-btn');
+        const stopFocusBtn = document.getElementById('stop-focus-btn');
+        const focusTaskInput = document.getElementById('focus-task-input');
+        const focusTaskName = document.getElementById('focus-task-name');
+        const focusRecordsBody = document.getElementById('focus-records-body');
+        const focusRemarksModal = document.getElementById('focus-remarks-modal');
+        const closeFocusRemarksModal = document.getElementById('close-focus-remarks-modal');
+        const saveFocusRemarksBtn = document.getElementById('save-focus-remarks-btn');
+        const focusStatusBtn = document.getElementById('focus-status-btn');
+        const focusStatusModal = document.getElementById('focus-status-modal');
+        const closeFocusStatusModal = document.getElementById('close-focus-status-modal');
+        const focusStartDate = document.getElementById('focus-start-date');
+        const focusEndDate = document.getElementById('focus-end-date');
+        const applyFocusDateRange = document.getElementById('apply-focus-date-range');
+        const focusStatusTabs = document.querySelectorAll('.status-tab[data-view^="focus"]');
+        const focusViews = document.querySelectorAll('.status-view[id$="focus-view"]');
+        const focusDailyChart = document.getElementById('focus-daily-chart');
+        const focusRemarksChart = document.getElementById('focus-remarks-chart');
+
+        // App State
+        let state = {
+            currentTasks: [],
+            pastTasks: [],
+            isEditing: false,
+            darkTheme: false,
+            buttonPositions: {
+                themeToggle: { x: 20, y: 20 },
+                addTask: { x: 20, y: 80 }
+            },
+            pomodoro: {
+                timer: null,
+                isRunning: false,
+                isPaused: false,
+                totalSeconds: 25 * 60, // Default 25 minutes
+                remainingSeconds: 25 * 60,
+                startTime: null,
+                endTime: null,
+                records: [],
+                currentRecord: null
+            },
+            focus: {
+                timer: null,
+                isRunning: false,
+                isPaused: false,
+                elapsedSeconds: 0,
+                startTime: null,
+                endTime: null,
+                records: [],
+                currentRecord: null
+            }
+        };
+
+        // Initialize app
+        function init() {
+            loadFromLocalStorage();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            setInterval(updateTasksProgress, 1000);
+            renderTasks();
+            renderPastTasks();
+            
+            // Set default dates for date range selectors
+            const today = new Date();
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(today.getDate() - 7);
+            
+            pomodoroStartDate.value = formatDateForInput(oneWeekAgo);
+            pomodoroEndDate.value = formatDateForInput(today);
+            focusStartDate.value = formatDateForInput(oneWeekAgo);
+            focusEndDate.value = formatDateForInput(today);
+            
+            if (state.darkTheme) {
+                document.body.classList.add('dark-theme');
+            }
+
+            positionButton(themeToggleBtn, state.buttonPositions.themeToggle);
+            positionButton(addTaskBtn, state.buttonPositions.addTask);
+
+            makeDraggable(themeToggleBtn, 'themeToggle');
+            makeDraggable(addTaskBtn, 'addTask');
+
+            // Initialize Pomodoro timer
+            updatePomodoroDisplay();
+            renderPomodoroRecords();
+            
+            // Initialize Focus Time
+            updateFocusDisplay();
+            renderFocusRecords();
+
+            // Event listeners
+            themeToggleBtn.addEventListener('click', toggleTheme);
+            addTaskBtn.addEventListener('click', () => openTaskModal(false));
+            closeModalBtn.addEventListener('click', closeTaskModal);
+            cancelBtn.addEventListener('click', closeTaskModal);
+            taskForm.addEventListener('submit', saveTask);
+            celebrationClose.addEventListener('click', () => {
+                celebrationOverlay.classList.remove('active');
+            });
+            
+            durationMethodBtn.addEventListener('click', () => {
+                durationMethodBtn.classList.add('active');
+                dateMethodBtn.classList.remove('active');
+                durationMethod.classList.add('active');
+                dateMethod.classList.remove('active');
+                taskMethodInput.value = 'duration';
+            });
+            
+            dateMethodBtn.addEventListener('click', () => {
+                dateMethodBtn.classList.add('active');
+                durationMethodBtn.classList.remove('active');
+                dateMethod.classList.add('active');
+                durationMethod.classList.remove('active');
+                taskMethodInput.value = 'date';
+            });
+            
+            settingsBtn.addEventListener('click', toggleSettingsMenu);
+            dataManagementBtn.addEventListener('click', function() {
+                openDataModal();
+                settingsMenu.classList.remove('active');
+            });
+            
+            closeDataModalBtn.addEventListener('click', closeDataModal);
+            exportJsonBtn.addEventListener('click', exportAsJson);
+            importJsonBtn.addEventListener('click', showImportTextarea);
+            importConfirmBtn.addEventListener('click', importFromJson);
+            
+            document.addEventListener('click', function(e) {
+                if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
+                    settingsMenu.classList.remove('active');
+                }
+            });
+
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+
+            // Pomodoro event listeners
+            startPomodoroBtn.addEventListener('click', startPomodoro);
+            pausePomodoroBtn.addEventListener('click', togglePausePomodoro);
+            cancelPomodoroBtn.addEventListener('click', cancelPomodoro);
+            setPomodoroBtn.addEventListener('click', openPomodoroSetModal);
+            closePomodoroSetModal.addEventListener('click', closePomodoroSetModalFunc);
+            cancelPomodoroSetBtn.addEventListener('click', closePomodoroSetModalFunc);
+            savePomodoroSetBtn.addEventListener('click', savePomodoroTime);
+            pomodoroTimeSlider.addEventListener('input', updatePomodoroTimeFromSlider);
+            pomodoroHoursInput.addEventListener('input', updatePomodoroTimeFromInputs);
+            pomodoroMinutesInput.addEventListener('input', updatePomodoroTimeFromInputs);
+            closePomodoroRemarksModal.addEventListener('click', closePomodoroRemarksModalFunc);
+            savePomodoroRemarksBtn.addEventListener('click', savePomodoroRemarks);
+            pomodoroStatusBtn.addEventListener('click', openPomodoroStatusModal);
+            closePomodoroStatusModal.addEventListener('click', closePomodoroStatusModalFunc);
+            applyPomodoroDateRange.addEventListener('click', updatePomodoroCharts);
+            
+            // Pomodoro status tabs
+            pomodoroStatusTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const viewId = tab.getAttribute('data-view');
+                    switchPomodoroStatusView(viewId);
+                });
+            });
+
+            // Focus Time event listeners
+            startFocusBtn.addEventListener('click', startFocus);
+            pauseFocusBtn.addEventListener('click', togglePauseFocus);
+            stopFocusBtn.addEventListener('click', stopFocus);
+            closeFocusRemarksModal.addEventListener('click', closeFocusRemarksModalFunc);
+            saveFocusRemarksBtn.addEventListener('click', saveFocusRemarks);
+            focusStatusBtn.addEventListener('click', openFocusStatusModal);
+            closeFocusStatusModal.addEventListener('click', closeFocusStatusModalFunc);
+            applyFocusDateRange.addEventListener('click', updateFocusCharts);
+            
+            // Focus status tabs
+            focusStatusTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const viewId = tab.getAttribute('data-view');
+                    switchFocusStatusView(viewId);
+                });
+            });
+
+            // Remarks options
+            remarksOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    remarksOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                });
+            });
+        }
+
+        // Tab switching
+        function switchTab(tabId) {
+            tabs.forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabId) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            tabContents.forEach(content => {
+                if (content.id === `${tabId}-content`) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        }
+
+        // Position a button based on saved coordinates
+        function positionButton(button, position) {
+            button.style.left = `${position.x}px`;
+            button.style.top = `${position.y}px`;
+        }
+
+        // Make a button draggable
+        function makeDraggable(button, buttonType) {
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            button.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - button.getBoundingClientRect().left;
+                offsetY = e.clientY - button.getBoundingClientRect().top;
+                button.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const x = e.clientX - offsetX;
+                const y = e.clientY - offsetY;
+
+                const maxX = window.innerWidth - button.offsetWidth;
+                const maxY = window.innerHeight - button.offsetHeight;
+
+                const constrainedX = Math.max(0, Math.min(x, maxX));
+                const constrainedY = Math.max(0, Math.min(y, maxY));
+
+                button.style.left = `${constrainedX}px`;
+                button.style.top = `${constrainedY}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    button.style.cursor = 'grab';
+                    
+                    const rect = button.getBoundingClientRect();
+                    state.buttonPositions[buttonType] = {
+                        x: rect.left,
+                        y: rect.top
+                    };
+                    saveToLocalStorage();
+                }
+            });
+
+            button.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                const touch = e.touches[0];
+                offsetX = touch.clientX - button.getBoundingClientRect().left;
+                offsetY = touch.clientY - button.getBoundingClientRect().top;
+                e.preventDefault();
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+
+                const x = touch.clientX - offsetX;
+                const y = touch.clientY - offsetY;
+
+                const maxX = window.innerWidth - button.offsetWidth;
+                const maxY = window.innerHeight - button.offsetHeight;
+
+                const constrainedX = Math.max(0, Math.min(x, maxX));
+                const constrainedY = Math.max(0, Math.min(y, maxY));
+
+                button.style.left = `${constrainedX}px`;
+                button.style.top = `${constrainedY}px`;
+                e.preventDefault();
+            });
+
+            document.addEventListener('touchend', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    
+                    const rect = button.getBoundingClientRect();
+                    state.buttonPositions[buttonType] = {
+                        x: rect.left,
+                        y: rect.top
+                    };
+                    saveToLocalStorage();
+                }
+            });
+        }
+
+        // Update current time display
+        function updateCurrentTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            currentTimeEl.textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Update tasks progress
+        function updateTasksProgress() {
+            if (state.currentTasks.length === 0) return;
+            
+            const now = new Date();
+            
+            state.currentTasks.forEach(task => {
+                const taskEl = document.getElementById(`task-${task.id}`);
+                if (!taskEl) return;
+                
+                const progressEl = taskEl.querySelector('.progress-bar');
+                const progressTextEl = taskEl.querySelector('.progress-text');
+                const timeLeftEl = taskEl.querySelector('.time-left');
+                
+                const elapsedMs = now - new Date(task.startTime);
+                const totalMs = task.durationMs;
+                const remainingMs = Math.max(0, totalMs - elapsedMs);
+                
+                const progressPercent = Math.min(100, (elapsedMs / totalMs) * 100);
+                progressEl.style.width = `${progressPercent.toFixed(1)}%`;
+                progressTextEl.textContent = `${progressPercent.toFixed(1)}%`;
+                
+                if (progressPercent >= 50) {
+                    progressTextEl.style.color = 'white';
+                } else {
+                    progressTextEl.style.color = 'var(--primary-color)';
+                }
+                
+                const years = Math.floor(remainingMs / (365 * 24 * 3600000));
+                const days = Math.floor((remainingMs % (365 * 24 * 3600000)) / (24 * 3600000));
+                const hours = Math.floor((remainingMs % (24 * 3600000)) / 3600000);
+                const minutes = Math.floor((remainingMs % 3600000) / 60000);
+                const seconds = Math.floor((remainingMs % 60000) / 1000);
+                
+                let timeLeftText = '';
+                if (years > 0) timeLeftText += `${years}y `;
+                if (days > 0) timeLeftText += `${days}d `;
+                timeLeftText += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                timeLeftEl.textContent = timeLeftText;
+                
+                if (remainingMs <= 0) {
+                    completeTask(task.id, false);
+                }
+            });
+        }
+
+        // Render all tasks
+        function renderTasks() {
+            const taskElements = ongoingTasksContainerEl.querySelectorAll('.task-item');
+            taskElements.forEach(el => el.remove());
+            
+            if (state.currentTasks.length === 0) {
+                noTasksMessageEl.style.display = 'block';
+                return;
+            } else {
+                noTasksMessageEl.style.display = 'none';
+            }
+            
+            state.currentTasks.forEach(task => {
+                const taskEl = document.createElement('div');
+                taskEl.className = 'task-item';
+                taskEl.id = `task-${task.id}`;
+                taskEl.draggable = true;
+                
+                const endDate = new Date(task.startTime);
+                endDate.setTime(endDate.getTime() + task.durationMs);
+                
+                const endDateFormatted = endDate.toLocaleString('en-US', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                taskEl.innerHTML = `
+                    <div class="drag-handle">⋮⋮</div>
+                    <div class="task-header">
+                        <div class="task-title">${task.name}</div>
+                        <div class="time-left">--:--:--</div>
+                    </div>
+                    <div class="end-date">Ends on: ${endDateFormatted}</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 0%"></div>
+                        <div class="progress-text">0%</div>
+                    </div>
+                    <div class="task-actions">
+                        <button class="btn edit-task-btn" data-id="${task.id}">Edit</button>
+                        <button class="btn complete-task-btn" data-id="${task.id}">Complete</button>
+                    </div>
+                `;
+                
+                taskEl.addEventListener('dragstart', (e) => {
+                    taskEl.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', task.id.toString());
+                });
+
+                taskEl.addEventListener('dragend', () => {
+                    taskEl.classList.remove('dragging');
+                    updateTaskOrder();
+                });
+                
+                ongoingTasksContainerEl.appendChild(taskEl);
+                
+                const editBtn = taskEl.querySelector('.edit-task-btn');
+                const completeBtn = taskEl.querySelector('.complete-task-btn');
+                
+                editBtn.addEventListener('click', () => openTaskModal(true, task.id));
+                completeBtn.addEventListener('click', () => completeTask(task.id, true));
+            });
+            
+            updateTasksProgress();
+        }
+
+        // Update task order after drag and drop
+        function updateTaskOrder() {
+            const newOrder = [];
+            const tasks = document.querySelectorAll('.task-item');
+            tasks.forEach(task => {
+                const taskId = parseInt(task.id.split('-')[1]);
+                const taskData = state.currentTasks.find(t => t.id === taskId);
+                if (taskData) {
+                    newOrder.push(taskData);
+                }
+            });
+            state.currentTasks = newOrder;
+            saveToLocalStorage();
+        }
+
+        // Open task modal
+        function openTaskModal(isEditing, taskId = null) {
+            state.isEditing = isEditing;
+            modalTitle.textContent = isEditing ? 'Edit Task' : 'Add New Task';
+            
+            if (isEditing && taskId) {
+                const task = state.currentTasks.find(t => t.id === taskId);
+                if (task) {
+                    const duration = task.durationMs;
+                    const years = Math.floor(duration / (365 * 24 * 3600000));
+                    const days = Math.floor((duration % (365 * 24 * 3600000)) / (24 * 3600000));
+                    const hours = Math.floor((duration % (24 * 3600000)) / 3600000);
+                    const minutes = Math.floor((duration % 3600000) / 60000);
+                    const seconds = Math.floor((duration % 60000) / 1000);
+                    
+                    taskNameInput.value = task.name;
+                    taskYearsInput.value = years;
+                    taskDaysInput.value = days;
+                    taskHoursInput.value = hours;
+                    taskMinutesInput.value = minutes;
+                    taskSecondsInput.value = seconds;
+                    
+                    const endDate = new Date(task.startTime);
+                    endDate.setTime(endDate.getTime() + task.durationMs);
+                    taskEndDateInput.value = endDate.toISOString().slice(0, 16);
+                    
+                    taskIdInput.value = taskId;
+                    durationMethodBtn.click();
+                }
+            } else {
+                taskForm.reset();
+                taskYearsInput.value = 0;
+                taskDaysInput.value = 0;
+                taskHoursInput.value = 0;
+                taskMinutesInput.value = 0;
+                taskSecondsInput.value = 0;
+                taskIdInput.value = '';
+                
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                taskEndDateInput.value = tomorrow.toISOString().slice(0, 16);
+                
+                durationMethodBtn.click();
+            }
+            
+            taskModal.style.display = 'flex';
+        }
+
+        // Close task modal
+        function closeTaskModal() {
+            taskModal.style.display = 'none';
+        }
+
+        // Save task
+        function saveTask(e) {
+            e.preventDefault();
+            
+            const name = taskNameInput.value;
+            let durationMs = 0;
+            
+            if (taskMethodInput.value === 'duration') {
+                const years = parseInt(taskYearsInput.value) || 0;
+                const days = parseInt(taskDaysInput.value) || 0;
+                const hours = parseInt(taskHoursInput.value) || 0;
+                const minutes = parseInt(taskMinutesInput.value) || 0;
+                const seconds = parseInt(taskSecondsInput.value) || 0;
+                
+                durationMs = (
+                    years * 365 * 24 * 3600 + 
+                    days * 24 * 3600 + 
+                    hours * 3600 + 
+                    minutes * 60 + 
+                    seconds
+                ) * 1000;
+            } else {
+                const endDate = new Date(taskEndDateInput.value);
+                const now = new Date();
+                durationMs = endDate - now;
+            }
+            
+            if (durationMs <= 0) {
+                alert('Please set a duration greater than zero or an end date in the future');
+                return;
+            }
+            
+            if (state.isEditing && taskIdInput.value) {
+                const taskId = parseInt(taskIdInput.value);
+                const taskIndex = state.currentTasks.findIndex(t => t.id === taskId);
+                
+                if (taskIndex !== -1) {
+                    state.currentTasks[taskIndex].name = name;
+                    state.currentTasks[taskIndex].durationMs = durationMs;
+                }
+            } else {
+                const newTask = {
+                    id: Date.now(),
+                    name,
+                    durationMs,
+                    startTime: new Date().toISOString(),
+                    completed: false
+                };
+                state.currentTasks.push(newTask);
+            }
+            
+            renderTasks();
+            saveToLocalStorage();
+            closeTaskModal();
+        }
+
+        // Complete task
+        function completeTask(taskId, isManualCompletion) {
+            const taskIndex = state.currentTasks.findIndex(t => t.id === taskId);
+            if (taskIndex === -1) return;
+            
+            const task = state.currentTasks[taskIndex];
+            const now = new Date();
+            const startTime = new Date(task.startTime);
+            const actualDurationMs = now - startTime;
+            const earlyCompletionMs = task.durationMs - actualDurationMs;
+            
+            const completedTask = {
+                id: task.id,
+                name: task.name,
+                durationMs: task.durationMs,
+                actualDurationMs,
+                completedAt: now.toISOString(),
+                completed: true,
+                isManualCompletion,
+                earlyCompletionMs: isManualCompletion ? earlyCompletionMs : 0
+            };
+            
+            state.pastTasks.unshift(completedTask);
+            state.currentTasks.splice(taskIndex, 1);
+            
+            if (isManualCompletion && earlyCompletionMs > 0) {
+                showCelebration(task.name, earlyCompletionMs);
+            }
+            
+            renderTasks();
+            renderPastTasks();
+            saveToLocalStorage();
+        }
+
+        // Show celebration animation
+        function showCelebration(taskName, earlyCompletionMs) {
+            const earlySeconds = Math.floor(earlyCompletionMs / 1000) % 60;
+            const earlyMinutes = Math.floor(earlyCompletionMs / (1000 * 60)) % 60;
+            const earlyHours = Math.floor(earlyCompletionMs / (1000 * 60 * 60)) % 24;
+            const earlyDays = Math.floor(earlyCompletionMs / (1000 * 60 * 60 * 24));
+            
+            let earlyText = '';
+            if (earlyDays > 0) earlyText += `${earlyDays}d `;
+            if (earlyHours > 0) earlyText += `${earlyHours}h `;
+            if (earlyMinutes > 0) earlyText += `${earlyMinutes}m `;
+            earlyText += `${earlySeconds}s`;
+            
+            celebrationText.textContent = "CONGRATULATIONS!";
+            celebrationSubtext.textContent = `You completed "${taskName}" ${earlyText} early!`;
+            
+            celebrationOverlay.classList.add('active');
+            createConfetti();
+        }
+
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
+            
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = '-10px';
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                confetti.style.opacity = '1';
+                
+                celebrationOverlay.appendChild(confetti);
+                
+                const animationDuration = Math.random() * 3 + 2;
+                confetti.style.transition = `all ${animationDuration}s linear`;
+                
+                setTimeout(() => {
+                    confetti.style.top = '110%';
+                    confetti.style.left = `${parseFloat(confetti.style.left) + (Math.random() * 40 - 20)}%`;
+                }, 10);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, animationDuration * 1000);
+            }
+        }
+
+        // Render past tasks
+        function renderPastTasks() {
+            pastTasksListEl.innerHTML = '';
+            
+            if (state.pastTasks.length === 0) {
+                pastTasksListEl.innerHTML = '<div class="past-task-item">No completed tasks yet</div>';
+                return;
+            }
+            
+            state.pastTasks.forEach(task => {
+                const taskEl = document.createElement('div');
+                taskEl.className = 'past-task-item';
+                
+                const actualDuration = task.actualDurationMs;
+                let durationText = '';
+                
+                const years = Math.floor(actualDuration / (365 * 24 * 3600000));
+                const days = Math.floor((actualDuration % (365 * 24 * 3600000)) / (24 * 3600000));
+                const hours = Math.floor((actualDuration % (24 * 3600000)) / 3600000);
+                const minutes = Math.floor((actualDuration % 3600000) / 60000);
+                const seconds = Math.floor((actualDuration % 60000) / 1000);
+                
+                if (years > 0) durationText += `${years}y `;
+                if (days > 0) durationText += `${days}d `;
+                durationText += `${hours}h ${minutes}m ${seconds}s`;
+                
+                const completedDate = new Date(task.completedAt);
+                const completedDateFormatted = completedDate.toLocaleString('en-US', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                taskEl.innerHTML = `
+                    <div>
+                        <div class="past-task-name">✅ ${task.name}</div>
+                        <div class="past-task-date">📅 Completed on: ${completedDateFormatted}</div>
+                        ${task.isManualCompletion && task.earlyCompletionMs > 0 ? 
+                            `<div class="early-completion">🎉 Completed ${formatEarlyCompletion(task.earlyCompletionMs)} early!</div>` : 
+                            ''}
+                    </div>
+                    <div class="past-task-time">🕒 ${durationText}</div>
+                `;
+                
+                pastTasksListEl.appendChild(taskEl);
+            });
+        }
+
+        // Format early completion time
+        function formatEarlyCompletion(ms) {
+            const seconds = Math.floor(ms / 1000) % 60;
+            const minutes = Math.floor(ms / (1000 * 60)) % 60;
+            const hours = Math.floor(ms / (1000 * 60 * 60)) % 24;
+            const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+            
+            let parts = [];
+            if (days > 0) parts.push(`${days}d`);
+            if (hours > 0) parts.push(`${hours}h`);
+            if (minutes > 0) parts.push(`${minutes}m`);
+            if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+            
+            return parts.join(' ');
+        }
+
+        // Toggle theme
+        function toggleTheme() {
+            state.darkTheme = !state.darkTheme;
+            document.body.classList.toggle('dark-theme');
+            saveToLocalStorage();
+        }
+
+        // Toggle Settings Menu
+        function toggleSettingsMenu(e) {
+            e.stopPropagation();
+            settingsMenu.classList.toggle('active');
+        }
+
+        // Open data modal
+        function openDataModal() {
+            dataModal.style.display = 'flex';
+            dataTextarea.style.display = 'none';
+            importConfirmBtn.style.display = 'none';
+        }
+
+        // Close data modal
+        function closeDataModal() {
+            dataModal.style.display = 'none';
+        }
+
+        // Export data as JSON
+        function exportAsJson() {
+            const data = {
+                currentTasks: state.currentTasks,
+                pastTasks: state.pastTasks,
+                darkTheme: state.darkTheme,
+                buttonPositions: state.buttonPositions,
+                pomodoroRecords: state.pomodoro.records,
+                focusRecords: state.focus.records
+            };
+            
+            dataTextarea.value = JSON.stringify(data, null, 2);
+            dataTextarea.style.display = 'block';
+            dataTextarea.select();
+            document.execCommand('copy');
+            
+            const originalText = exportJsonBtn.textContent;
+            exportJsonBtn.textContent = 'Copied to clipboard!';
+            setTimeout(() => {
+                exportJsonBtn.textContent = originalText;
+            }, 2000);
+        }
+
+        // Show import textarea
+        function showImportTextarea() {
+            dataTextarea.value = '';
+            dataTextarea.style.display = 'block';
+            importConfirmBtn.style.display = 'block';
+        }
+
+        // Import data from JSON
+        function importFromJson() {
+            try {
+                const data = JSON.parse(dataTextarea.value);
+                
+                if (!data.currentTasks || !data.pastTasks) {
+                    throw new Error('Invalid data format');
+                }
+                
+                if (confirm('This will overwrite your current data. Continue?')) {
+                    state.currentTasks = data.currentTasks || [];
+                    state.pastTasks = data.pastTasks || [];
+                    state.darkTheme = data.darkTheme || false;
+                    state.buttonPositions = data.buttonPositions || {
+                        themeToggle: { x: 20, y: 20 },
+                        addTask: { x: 20, y: 80 }
+                    };
+                    state.pomodoro.records = data.pomodoroRecords || [];
+                    state.focus.records = data.focusRecords || [];
+                    
+                    if (state.darkTheme) {
+                        document.body.classList.add('dark-theme');
+                    } else {
+                        document.body.classList.remove('dark-theme');
+                    }
+                    
+                    positionButton(themeToggleBtn, state.buttonPositions.themeToggle);
+                    positionButton(addTaskBtn, state.buttonPositions.addTask);
+                    
+                    renderTasks();
+                    renderPastTasks();
+                    renderPomodoroRecords();
+                    renderFocusRecords();
+                    saveToLocalStorage();
+                    
+                    closeDataModal();
+                    alert('Data imported successfully!');
+                }
+            } catch (error) {
+                alert('Error importing data: ' + error.message);
+            }
+        }
+
+        // Save to local storage
+        function saveToLocalStorage() {
+            const data = {
+                currentTasks: state.currentTasks,
+                pastTasks: state.pastTasks,
+                darkTheme: state.darkTheme,
+                buttonPositions: state.buttonPositions,
+                pomodoroRecords: state.pomodoro.records,
+                focusRecords: state.focus.records
+            };
+            localStorage.setItem('productivitySuite', JSON.stringify(data));
+        }
+
+        // Load from local storage
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('productivitySuite');
+            if (!savedData) return;
+            
+            try {
+                const data = JSON.parse(savedData);
+                
+                state.currentTasks = data.currentTasks || [];
+                state.pastTasks = data.pastTasks || [];
+                state.darkTheme = data.darkTheme || false;
+                
+                if (data.buttonPositions) {
+                    state.buttonPositions = data.buttonPositions;
+                }
+                
+                if (data.pomodoroRecords) {
+                    state.pomodoro.records = data.pomodoroRecords;
+                }
+                
+                if (data.focusRecords) {
+                    state.focus.records = data.focusRecords;
+                }
+            } catch (error) {
+                console.error('Error loading data from localStorage:', error);
+            }
+        }
+
+        /* ====================== */
+        /* POMODORO TIMER SECTION */
+        /* ====================== */
+
+        // Update Pomodoro display
+        function updatePomodoroDisplay() {
+            const minutes = Math.floor(state.pomodoro.remainingSeconds / 60);
+            const seconds = state.pomodoro.remainingSeconds % 60;
+            pomodoroTimeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const progressPercent = ((state.pomodoro.totalSeconds - state.pomodoro.remainingSeconds) / state.pomodoro.totalSeconds) * 100;
+            pomodoroProgressCircle.style.background = `conic-gradient(var(--pomodoro-color) ${progressPercent}%, var(--progress-bg) ${progressPercent}%)`;
+        }
+
+        // Start Pomodoro timer
+        function startPomodoro() {
+            if (state.pomodoro.isRunning) return;
+            
+            state.pomodoro.isRunning = true;
+            state.pomodoro.isPaused = false;
+            state.pomodoro.startTime = new Date();
+            state.pomodoro.currentRecord = {
+                id: Date.now(),
+                startTime: state.pomodoro.startTime.toISOString(),
+                status: 'running',
+                pauses: 0,
+                remark: null
+            };
+            
+            startPomodoroBtn.disabled = true;
+            pausePomodoroBtn.disabled = false;
+            cancelPomodoroBtn.disabled = false;
+            
+            state.pomodoro.timer = setInterval(() => {
+                state.pomodoro.remainingSeconds--;
+                updatePomodoroDisplay();
+                
+                if (state.pomodoro.remainingSeconds <= 0) {
+                    completePomodoro();
+                }
+            }, 1000);
+        }
+
+        // Toggle pause/resume Pomodoro
+        function togglePausePomodoro() {
+            if (!state.pomodoro.isRunning) return;
+            
+            if (state.pomodoro.isPaused) {
+                // Resume
+                state.pomodoro.isPaused = false;
+                pausePomodoroBtn.textContent = 'Pause';
+                state.pomodoro.startTime = new Date();
+                
+                state.pomodoro.timer = setInterval(() => {
+                    state.pomodoro.remainingSeconds--;
+                    updatePomodoroDisplay();
+                    
+                    if (state.pomodoro.remainingSeconds <= 0) {
+                        completePomodoro();
+                    }
+                }, 1000);
+            } else {
+                // Pause
+                state.pomodoro.isPaused = true;
+                pausePomodoroBtn.textContent = 'Resume';
+                clearInterval(state.pomodoro.timer);
+                
+                if (state.pomodoro.currentRecord) {
+                    state.pomodoro.currentRecord.pauses++;
+                }
+            }
+        }
+
+        // Cancel Pomodoro
+        function cancelPomodoro() {
+            clearInterval(state.pomodoro.timer);
+            state.pomodoro.isRunning = false;
+            state.pomodoro.isPaused = false;
+            
+            startPomodoroBtn.disabled = false;
+            pausePomodoroBtn.disabled = true;
+            cancelPomodoroBtn.disabled = true;
+            pausePomodoroBtn.textContent = 'Pause';
+            
+            if (state.pomodoro.currentRecord) {
+                state.pomodoro.currentRecord.endTime = new Date().toISOString();
+                state.pomodoro.currentRecord.status = 'cancelled';
+                state.pomodoro.currentRecord.duration = state.pomodoro.totalSeconds - state.pomodoro.remainingSeconds;
+                openPomodoroRemarksModal();
+            }
+            
+            state.pomodoro.remainingSeconds = state.pomodoro.totalSeconds;
+            updatePomodoroDisplay();
+        }
+
+        // Complete Pomodoro
+        function completePomodoro() {
+            clearInterval(state.pomodoro.timer);
+            state.pomodoro.isRunning = false;
+            state.pomodoro.isPaused = false;
+            
+            startPomodoroBtn.disabled = false;
+            pausePomodoroBtn.disabled = true;
+            cancelPomodoroBtn.disabled = true;
+            pausePomodoroBtn.textContent = 'Pause';
+            
+            if (state.pomodoro.currentRecord) {
+                state.pomodoro.currentRecord.endTime = new Date().toISOString();
+                state.pomodoro.currentRecord.status = state.pomodoro.currentRecord.pauses > 0 ? 'paused' : 'completed';
+                state.pomodoro.currentRecord.duration = state.pomodoro.totalSeconds;
+                openPomodoroRemarksModal();
+            }
+            
+            state.pomodoro.remainingSeconds = state.pomodoro.totalSeconds;
+            updatePomodoroDisplay();
+        }
+
+        // Open Pomodoro set time modal
+        function openPomodoroSetModal() {
+            const minutes = state.pomodoro.totalSeconds / 60;
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = Math.floor(minutes % 60);
+            
+            pomodoroHoursInput.value = hours;
+            pomodoroMinutesInput.value = remainingMinutes;
+            pomodoroTimeSlider.value = minutes;
+            
+            pomodoroSetModal.style.display = 'flex';
+        }
+
+        // Close Pomodoro set time modal
+        function closePomodoroSetModalFunc() {
+            pomodoroSetModal.style.display = 'none';
+        }
+
+        // Save Pomodoro time
+        function savePomodoroTime() {
+            const hours = parseInt(pomodoroHoursInput.value) || 0;
+            const minutes = parseInt(pomodoroMinutesInput.value) || 0;
+            
+            if (hours > 25 || (hours === 25 && minutes > 59)) {
+                alert('Maximum time is 25 hours 59 minutes');
+                return;
+            }
+            
+            const totalMinutes = (hours * 60) + minutes;
+            state.pomodoro.totalSeconds = totalMinutes * 60;
+            state.pomodoro.remainingSeconds = state.pomodoro.totalSeconds;
+            
+            updatePomodoroDisplay();
+            closePomodoroSetModalFunc();
+        }
+
+        // Update Pomodoro time from slider
+        function updatePomodoroTimeFromSlider() {
+            const totalMinutes = parseInt(pomodoroTimeSlider.value);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            
+            pomodoroHoursInput.value = hours;
+            pomodoroMinutesInput.value = minutes;
+        }
+
+        // Update Pomodoro time from inputs
+        function updatePomodoroTimeFromInputs() {
+            const hours = parseInt(pomodoroHoursInput.value) || 0;
+            const minutes = parseInt(pomodoroMinutesInput.value) || 0;
+            
+            if (hours > 25 || (hours === 25 && minutes > 59)) {
+                alert('Maximum time is 25 hours 59 minutes');
+                pomodoroHoursInput.value = 25;
+                pomodoroMinutesInput.value = 59;
+                return;
+            }
+            
+            const totalMinutes = (hours * 60) + minutes;
+            pomodoroTimeSlider.value = totalMinutes;
+        }
+
+        // Open Pomodoro remarks modal
+        function openPomodoroRemarksModal() {
+            // Reset selected remark
+            remarksOptions.forEach(opt => opt.classList.remove('selected'));
+            pomodoroRemarksModal.style.display = 'flex';
+        }
+
+        // Close Pomodoro remarks modal
+        function closePomodoroRemarksModalFunc() {
+            pomodoroRemarksModal.style.display = 'none';
+        }
+
+        // Save Pomodoro remarks
+        function savePomodoroRemarks() {
+            const selectedRemark = document.querySelector('.remarks-option.selected');
+            
+            if (selectedRemark && state.pomodoro.currentRecord) {
+                state.pomodoro.currentRecord.remark = selectedRemark.getAttribute('data-remark');
+                state.pomodoro.records.unshift(state.pomodoro.currentRecord);
+                renderPomodoroRecords();
+                saveToLocalStorage();
+            }
+            
+            closePomodoroRemarksModalFunc();
+            state.pomodoro.currentRecord = null;
+        }
+
+        // Render Pomodoro records
+        function renderPomodoroRecords() {
+            pomodoroRecordsBody.innerHTML = '';
+            
+            if (state.pomodoro.records.length === 0) {
+                pomodoroRecordsBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No records yet</td></tr>';
+                return;
+            }
+            
+            state.pomodoro.records.forEach(record => {
+                const row = document.createElement('tr');
+                
+                const statusCell = document.createElement('td');
+                statusCell.textContent = record.status === 'completed' ? '✅' : 
+                                        record.status === 'paused' ? '⏸️' : '❌';
+                
+                const startTimeCell = document.createElement('td');
+                startTimeCell.textContent = formatDateTime(new Date(record.startTime));
+                
+                const endTimeCell = document.createElement('td');
+                endTimeCell.textContent = record.endTime ? formatDateTime(new Date(record.endTime)) : '--';
+                
+                const durationCell = document.createElement('td');
+                durationCell.textContent = formatDuration(record.duration);
+                
+                const remarkCell = document.createElement('td');
+                remarkCell.textContent = record.remark || '--';
+                
+                row.appendChild(statusCell);
+                row.appendChild(startTimeCell);
+                row.appendChild(endTimeCell);
+                row.appendChild(durationCell);
+                row.appendChild(remarkCell);
+                
+                pomodoroRecordsBody.appendChild(row);
+            });
+        }
+
+        // Open Pomodoro status modal
+        function openPomodoroStatusModal() {
+            updatePomodoroCharts();
+            pomodoroStatusModal.style.display = 'flex';
+        }
+
+        // Close Pomodoro status modal
+        function closePomodoroStatusModalFunc() {
+            pomodoroStatusModal.style.display = 'none';
+        }
+
+        // Switch Pomodoro status view
+        function switchPomodoroStatusView(viewId) {
+            pomodoroStatusTabs.forEach(tab => {
+                if (tab.getAttribute('data-view') === viewId) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            pomodoroViews.forEach(view => {
+                if (view.id === `${viewId}-view`) {
+                    view.classList.add('active');
+                } else {
+                    view.classList.remove('active');
+                }
+            });
+        }
+
+        // Update Pomodoro charts
+        function updatePomodoroCharts() {
+            const startDate = new Date(pomodoroStartDate.value);
+            const endDate = new Date(pomodoroEndDate.value);
+            
+            // Filter records by date range
+            const filteredRecords = state.pomodoro.records.filter(record => {
+                const recordDate = new Date(record.startTime);
+                return recordDate >= startDate && recordDate <= endDate;
+            });
+            
+            // Group by date
+            const dailyData = {};
+            filteredRecords.forEach(record => {
+                const date = new Date(record.startTime).toLocaleDateString();
+                if (!dailyData[date]) {
+                    dailyData[date] = {
+                        totalTime: 0,
+                        completed: 0,
+                        paused: 0,
+                        cancelled: 0,
+                        sessions: 0
+                    };
+                }
+                
+                dailyData[date].totalTime += record.duration;
+                if (record.status === 'completed') dailyData[date].completed++;
+                if (record.status === 'paused') dailyData[date].paused++;
+                if (record.status === 'cancelled') dailyData[date].cancelled++;
+                dailyData[date].sessions++;
+            });
+            
+            // Prepare data for daily overview chart
+            const dates = Object.keys(dailyData).sort();
+            const totalTimeData = dates.map(date => Math.floor(dailyData[date].totalTime / 60)); // Convert to minutes
+            const sessionsData = dates.map(date => dailyData[date].sessions);
+            const completedData = dates.map(date => dailyData[date].completed);
+            const pausedData = dates.map(date => dailyData[date].paused);
+            const cancelledData = dates.map(date => dailyData[date].cancelled);
+            
+            // Render daily overview chart (simple text-based for this example)
+            pomodoroDailyChart.innerHTML = `
+                <h3>Daily Overview</h3>
+                <p>Total Time: ${totalTimeData.reduce((a, b) => a + b, 0)} minutes</p>
+                <p>Total Sessions: ${sessionsData.reduce((a, b) => a + b, 0)}</p>
+                <p>Completed: ${completedData.reduce((a, b) => a + b, 0)}</p>
+                <p>Paused: ${pausedData.reduce((a, b) => a + b, 0)}</p>
+                <p>Cancelled: ${cancelledData.reduce((a, b) => a + b, 0)}</p>
+            `;
+            
+            // Prepare data for remarks breakdown
+            const remarksCount = {};
+            filteredRecords.forEach(record => {
+                if (record.remark) {
+                    remarksCount[record.remark] = (remarksCount[record.remark] || 0) + 1;
+                }
+            });
+            
+            const totalRemarks = filteredRecords.filter(r => r.remark).length;
+            
+            // Render remarks breakdown chart (simple text-based for this example)
+            let remarksHtml = '<h3>Remarks Breakdown</h3>';
+            for (const remark in remarksCount) {
+                const percentage = Math.round((remarksCount[remark] / totalRemarks) * 100);
+                remarksHtml += `
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>${remark}</span>
+                            <span>${percentage}%</span>
+                        </div>
+                        <div style="height: 10px; background: var(--progress-bg); border-radius: 5px;">
+                            <div style="width: ${percentage}%; height: 100%; background: var(--pomodoro-color); border-radius: 5px;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            pomodoroRemarksChart.innerHTML = remarksHtml;
+        }
+
+        /* ====================== */
+        /* FOCUS TIME SECTION */
+        /* ====================== */
+
+        // Update Focus Time display
+        function updateFocusDisplay() {
+            const hours = Math.floor(state.focus.elapsedSeconds / 3600);
+            const minutes = Math.floor((state.focus.elapsedSeconds % 3600) / 60);
+            const seconds = state.focus.elapsedSeconds % 60;
+            
+            focusTimeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Start Focus Time
+        function startFocus() {
+            if (state.focus.isRunning) return;
+            
+            if (!focusTaskName.value.trim()) {
+                alert('Please enter what you are focusing on');
+                return;
+            }
+            
+            state.focus.isRunning = true;
+            state.focus.isPaused = false;
+            state.focus.startTime = new Date();
+            state.focus.elapsedSeconds = 0;
+            state.focus.currentRecord = {
+                id: Date.now(),
+                task: focusTaskName.value.trim(),
+                startTime: state.focus.startTime.toISOString(),
+                status: 'running',
+                pauses: 0,
+                remark: null
+            };
+            
+            startFocusBtn.disabled = true;
+            pauseFocusBtn.disabled = false;
+            stopFocusBtn.disabled = false;
+            focusTaskInput.style.display = 'none';
+            
+            state.focus.timer = setInterval(() => {
+                state.focus.elapsedSeconds++;
+                updateFocusDisplay();
+            }, 1000);
+        }
+
+        // Toggle pause/resume Focus Time
+        function togglePauseFocus() {
+            if (!state.focus.isRunning) return;
+            
+            if (state.focus.isPaused) {
+                // Resume
+                state.focus.isPaused = false;
+                pauseFocusBtn.textContent = 'Pause';
+                state.focus.startTime = new Date();
+                
+                state.focus.timer = setInterval(() => {
+                    state.focus.elapsedSeconds++;
+                    updateFocusDisplay();
+                }, 1000);
+            } else {
+                // Pause
+                state.focus.isPaused = true;
+                pauseFocusBtn.textContent = 'Resume';
+                clearInterval(state.focus.timer);
+                
+                if (state.focus.currentRecord) {
+                    state.focus.currentRecord.pauses++;
+                }
+            }
+        }
+
+        // Stop Focus Time
+        function stopFocus() {
+            clearInterval(state.focus.timer);
+            state.focus.isRunning = false;
+            state.focus.isPaused = false;
+            
+            startFocusBtn.disabled = false;
+            pauseFocusBtn.disabled = true;
+            stopFocusBtn.disabled = true;
+            pauseFocusBtn.textContent = 'Pause';
+            focusTaskInput.style.display = 'block';
+            focusTaskName.value = '';
+            
+            if (state.focus.currentRecord) {
+                state.focus.currentRecord.endTime = new Date().toISOString();
+                state.focus.currentRecord.status = state.focus.currentRecord.pauses > 0 ? 'paused' : 'completed';
+                state.focus.currentRecord.duration = state.focus.elapsedSeconds;
+                openFocusRemarksModal();
+            }
+            
+            state.focus.elapsedSeconds = 0;
+            updateFocusDisplay();
+        }
+
+        // Open Focus Time remarks modal
+        function openFocusRemarksModal() {
+            // Reset selected remark
+            remarksOptions.forEach(opt => opt.classList.remove('selected'));
+            focusRemarksModal.style.display = 'flex';
+        }
+
+        // Close Focus Time remarks modal
+        function closeFocusRemarksModalFunc() {
+            focusRemarksModal.style.display = 'none';
+        }
+
+        // Save Focus Time remarks
+        function saveFocusRemarks() {
+            const selectedRemark = document.querySelector('.remarks-option.selected');
+            
+            if (selectedRemark && state.focus.currentRecord) {
+                state.focus.currentRecord.remark = selectedRemark.getAttribute('data-remark');
+                state.focus.records.unshift(state.focus.currentRecord);
+                renderFocusRecords();
+                saveToLocalStorage();
+            }
+            
+            closeFocusRemarksModalFunc();
+            state.focus.currentRecord = null;
+        }
+
+        // Render Focus Time records
+        function renderFocusRecords() {
+            focusRecordsBody.innerHTML = '';
+            
+            if (state.focus.records.length === 0) {
+                focusRecordsBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No records yet</td></tr>';
+                return;
+            }
+            
+            state.focus.records.forEach(record => {
+                const row = document.createElement('tr');
+                
+                const statusCell = document.createElement('td');
+                statusCell.textContent = record.status === 'completed' ? '✅' : 
+                                        record.status === 'paused' ? '⏸️' : '❌';
+                
+                const dateCell = document.createElement('td');
+                dateCell.textContent = formatDate(new Date(record.startTime));
+                
+                const durationCell = document.createElement('td');
+                durationCell.textContent = formatDuration(record.duration);
+                
+                const taskCell = document.createElement('td');
+                taskCell.textContent = record.task;
+                
+                const remarkCell = document.createElement('td');
+                remarkCell.textContent = record.remark || '--';
+                
+                row.appendChild(statusCell);
+                row.appendChild(dateCell);
+                row.appendChild(durationCell);
+                row.appendChild(taskCell);
+                row.appendChild(remarkCell);
+                
+                focusRecordsBody.appendChild(row);
+            });
+        }
+
+        // Open Focus Time status modal
+        function openFocusStatusModal() {
+            updateFocusCharts();
+            focusStatusModal.style.display = 'flex';
+        }
+
+        // Close Focus Time status modal
+        function closeFocusStatusModalFunc() {
+            focusStatusModal.style.display = 'none';
+        }
+
+        // Switch Focus Time status view
+        function switchFocusStatusView(viewId) {
+            focusStatusTabs.forEach(tab => {
+                if (tab.getAttribute('data-view') === viewId) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            focusViews.forEach(view => {
+                if (view.id === `${viewId}-view`) {
+                    view.classList.add('active');
+                } else {
+                    view.classList.remove('active');
+                }
+            });
+        }
+
+        // Update Focus Time charts
+        function updateFocusCharts() {
+            const startDate = new Date(focusStartDate.value);
+            const endDate = new Date(focusEndDate.value);
+            
+            // Filter records by date range
+            const filteredRecords = state.focus.records.filter(record => {
+                const recordDate = new Date(record.startTime);
+                return recordDate >= startDate && recordDate <= endDate;
+            });
+            
+            // Group by date
+            const dailyData = {};
+            filteredRecords.forEach(record => {
+                const date = new Date(record.startTime).toLocaleDateString();
+                if (!dailyData[date]) {
+                    dailyData[date] = {
+                        totalTime: 0,
+                        completed: 0,
+                        paused: 0,
+                        cancelled: 0,
+                        sessions: 0
+                    };
+                }
+                
+                dailyData[date].totalTime += record.duration;
+                if (record.status === 'completed') dailyData[date].completed++;
+                if (record.status === 'paused') dailyData[date].paused++;
+                if (record.status === 'cancelled') dailyData[date].cancelled++;
+                dailyData[date].sessions++;
+            });
+            
+            // Prepare data for daily overview chart
+            const dates = Object.keys(dailyData).sort();
+            const totalTimeData = dates.map(date => Math.floor(dailyData[date].totalTime / 60)); // Convert to minutes
+            const sessionsData = dates.map(date => dailyData[date].sessions);
+            const completedData = dates.map(date => dailyData[date].completed);
+            const pausedData = dates.map(date => dailyData[date].paused);
+            const cancelledData = dates.map(date => dailyData[date].cancelled);
+            
+            // Render daily overview chart (simple text-based for this example)
+            focusDailyChart.innerHTML = `
+                <h3>Daily Overview</h3>
+                <p>Total Time: ${totalTimeData.reduce((a, b) => a + b, 0)} minutes</p>
+                <p>Total Sessions: ${sessionsData.reduce((a, b) => a + b, 0)}</p>
+                <p>Completed: ${completedData.reduce((a, b) => a + b, 0)}</p>
+                <p>Paused: ${pausedData.reduce((a, b) => a + b, 0)}</p>
+                <p>Cancelled: ${cancelledData.reduce((a, b) => a + b, 0)}</p>
+            `;
+            
+            // Prepare data for remarks breakdown
+            const remarksCount = {};
+            filteredRecords.forEach(record => {
+                if (record.remark) {
+                    remarksCount[record.remark] = (remarksCount[record.remark] || 0) + 1;
+                }
+            });
+            
+            const totalRemarks = filteredRecords.filter(r => r.remark).length;
+            
+            // Render remarks breakdown chart (simple text-based for this example)
+            let remarksHtml = '<h3>Remarks Breakdown</h3>';
+            for (const remark in remarksCount) {
+                const percentage = Math.round((remarksCount[remark] / totalRemarks) * 100);
+                remarksHtml += `
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>${remark}</span>
+                            <span>${percentage}%</span>
+                        </div>
+                        <div style="height: 10px; background: var(--progress-bg); border-radius: 5px;">
+                            <div style="width: ${percentage}%; height: 100%; background: var(--focus-color); border-radius: 5px;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            focusRemarksChart.innerHTML = remarksHtml;
+        }
+
+        /* ====================== */
+        /* UTILITY FUNCTIONS */
+        /* ====================== */
+
+        // Format date for display
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // Format date and time for display
+        function formatDateTime(date) {
+            return date.toLocaleString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // Format duration (seconds) to readable format
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+
+        // Format date for input element
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
