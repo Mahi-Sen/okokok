@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Management Suite</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- Universal Background Rings -->
+    <div class="time-rings-container" id="time-rings-container"></div>
+
+    <!-- Main App Structure -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="owner-name">MiHiR</div>
+            </div>
+            
+            <nav class="tabs-container">
+                <button class="tab-btn active" data-tab="tasks">
+                    <i class="icon">📋</i>TASKS
+                </button>
+                <button class="tab-btn" data-tab="pomodoro">
+                    <i class="icon">⏱️</i>POMODORO
+                </button>
+                <button class="tab-btn" data-tab="focus">
+                    <i class="icon">🎯</i>FOCUS
+                </button>
+            </nav>
+
+            <div class="header-right">
+                <button class="settings-btn" id="settings-btn">☰</button>
+                <div class="settings-menu" id="settings-menu">
+                    <div class="settings-item" id="data-management-btn">
+                        <i>📁</i> Data Management
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Global Time Display -->
+        <div class="time-display">
+            <div class="current-time" id="current-time">Loading time...</div>
+        </div>
+
+        <!-- Tab Contents -->
+        <main class="tab-contents">
+            <!-- Tasks Tab -->
+            <section class="tab-content active" id="tasks-tab">
+                <div class="main-content">
+                    <div class="ongoing-tasks" id="ongoing-tasks-container">
+                        <div class="no-tasks-message" id="no-tasks-message">
+                            No active tasks. Add a task to get started!
+                        </div>
+                    </div>
+                    
+                    <div class="past-tasks">
+                        <h2 class="section-title">Completed Tasks</h2>
+                        <div id="past-tasks-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pomodoro Tab -->
+            <section class="tab-content" id="pomodoro-tab">
+                <div class="main-content">
+                    <div class="timer-container">
+                        <div class="circular-progress" id="pomodoro-progress">
+                            <div class="timer-display" id="pomodoro-time">25:00</div>
+                        </div>
+                        <div class="timer-controls">
+                            <button id="pomodoro-start" class="primary-btn">Start</button>
+                            <button id="pomodoro-pause" class="primary-btn hidden">Pause</button>
+                            <button id="pomodoro-resume" class="primary-btn hidden">Resume</button>
+                            <button id="pomodoro-cancel" class="secondary-btn">Cancel</button>
+                        </div>
+                    </div>
+                    <div class="records-section">
+                        <h2 class="section-title">Pomodoro Records</h2>
+                        <div class="records-container">
+                            <table id="pomodoro-records">
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Duration</th>
+                                        <th>Start Time</th>
+                                        <th>End Time</th>
+                                        <th>Remark</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Focus Tab -->
+            <section class="tab-content" id="focus-tab">
+                <div class="main-content">
+                    <div class="focus-input">
+                        <label for="focus-task">📝 Focused On:</label>
+                        <input type="text" id="focus-task" placeholder="Enter task name...">
+                    </div>
+                    <div class="timer-container">
+                        <div class="focus-timer-display" id="focus-time">00:00:00</div>
+                        <div class="timer-controls">
+                            <button id="focus-start" class="primary-btn">Start</button>
+                            <button id="focus-pause" class="primary-btn hidden">Pause</button>
+                            <button id="focus-resume" class="primary-btn hidden">Resume</button>
+                            <button id="focus-stop" class="secondary-btn hidden">Stop</button>
+                        </div>
+                    </div>
+                    <div class="records-section">
+                        <h2 class="section-title">Focus Records</h2>
+                        <div class="records-container">
+                            <table id="focus-records">
+                                <thead>
+                                    <tr>
+                                        <th>Task</th>
+                                        <th>Duration</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Remark</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="progress-container">
+                <div class="overall-progress-label">OVERALL PROGRESS</div>
+                <div class="overall-progress-container">
+                    <div class="overall-progress-bar" id="overall-progress"></div>
+                    <div class="overall-progress-text" id="overall-progress-text">0%</div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <!-- Task Modal -->
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add New Task</h2>
+                <button class="close-modal" id="close-modal">×</button>
+            </div>
+            <form id="task-form">
+                <!-- Task form content -->
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Management Modal -->
+    <div class="modal" id="data-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Data Management</h2>
+                <button class="close-modal" id="close-data-modal">×</button>
+            </div>
+            <div class="data-actions">
+                <button class="data-action-btn" id="export-data-btn">Export Data</button>
+                <button class="data-action-btn" id="import-data-btn">Import Data</button>
+                <textarea class="data-textarea" id="data-textarea"></textarea>
+                <button class="data-action-btn hidden" id="import-confirm-btn">Confirm Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remarks Modal -->
+    <div class="modal" id="remarks-modal">
+        <div class="modal-content">
+            <h2>How was your session?</h2>
+            <div class="remarks-container">
+                <button class="remark-btn" data-remark="💯 Super Focused">💯 Super Focused</button>
+                <button class="remark-btn" data-remark="😊 Productive">😊 Productive</button>
+                <button class="remark-btn" data-remark="😐 Average">😐 Average</button>
+                <button class="remark-btn" data-remark="😶 Distracted">😶 Distracted</button>
+                <button class="remark-btn" data-remark="😴 Tired">😴 Tired</button>
+                <button class="remark-btn" data-remark="🎯 Focused">🎯 Focused</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Overlay -->
+    <div class="celebration-overlay" id="celebration-overlay">
+        <div class="celebration-content">
+            <div class="celebration-text" id="celebration-text">CONGRATULATIONS!</div>
+            <div class="celebration-subtext" id="celebration-subtext"></div>
+            <button class="celebration-close" id="celebration-close">Continue</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/tasks.js"></script>
+    <script src="js/pomodoro.js"></script>
+    <script src="js/focus.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
